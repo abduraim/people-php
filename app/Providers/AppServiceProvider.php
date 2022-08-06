@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\HtmlParser\HtmlParser;
+use App\Services\NewsResources\Rbc;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,7 +15,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->singleton(HtmlParser::class, function () {
+            return new HtmlParser(new Rbc());
+        });
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\NewsItemController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,5 +15,18 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+
+    $url = 'https://www.rbc.ru/';
+    $test = new \App\Services\HtmlParser\HtmlParser(new \App\Services\NewsResources\Rbc());
+
+
+
+    dd('end');
+
+
+
     return view('welcome');
 });
+
+Route::get('news_items/fetch', [NewsItemController::class, 'fetch'])->name('news_items.fetch');
+Route::resource('news_items', NewsItemController::class)->only(['index', 'show']);
