@@ -4,98 +4,27 @@ namespace App\Services\HtmlParser;
 
 use App\Models\NewsItem;
 use App\Services\NewsResources\Contracts\NewsResourceInterface;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\DomCrawler\Crawler;
 
+/**
+ * Парсер новостного ресурса
+ */
 class HtmlParser
 {
-    protected NewsResourceInterface $newsResource;
+    public function __construct(protected NewsResourceInterface $newsResource)
+    {
+        //
+    }
 
-    public function __construct(
-        NewsResourceInterface $newsResource
-    )
+    /**
+     * Установить новостной ресурс
+     */
+    public function setNewsResource(NewsResourceInterface $newsResource): void
     {
         $this->newsResource = $newsResource;
-        return false;
-        $html = $this->getHtml($url);
-
-        $newsListSelector = '.js-news-feed-list';
-        $newsItemLinkSelector = '.news-feed__item';
-        $newsItemTitleSelector = '.news-feed__item__title';
-
-        $crawler = new Crawler($html);
-
-        $news = $crawler
-            ->filter($newsListSelector)
-            ->filter($newsItemLinkSelector)
-            ->each(function (Crawler $node, $i) use ($url, $newsItemTitleSelector) {
-
-                $newsItem = new NewsItem();
-
-                // Source
-                $newsItem->source = $url;
-
-                // Source link
-                $newsItem->source_link = $node->link()->getUri();
-
-                // Title
-                $titleNode = $node->filter($newsItemTitleSelector)->first();
-                $newsItem->title = $titleNode->count()
-                    ? $titleNode->text()
-                    : '';
-
-
-                // Parsing newsItem
-                $html = $this->getHtml($newsItem->source_link);
-                $crawler = new Crawler($html);
-
-
-
-                // Text
-                $newsItemText = $crawler
-                    ->filter('.article__main .article__content')
-                    ->first();
-                $newsItem->text = $newsItemText->count()
-                    ? $newsItemText->text()
-                    : '';
-
-                // Rating
-                $newsItem->rating = rand(1, 5);
-
-                // Save news item
-                $newsItem->save();
-
-                $newsItemImage = $crawler
-                    ->filter('.article__image');
-
-                dd($newsItemImage);
-
-                dd($newsItemText->text());
-
-                $newsItemSlug = $crawler
-                    ->filter('.is-hide')
-                    ->text();
-
-                dd($newsItemSlug);
-
-
-
-                dd($newsItem);
-
-                $html = Http::get($link)->body();
-
-                dd($html);
-            });
-
-        foreach ($news as $newsItem) {
-            dd($newsItem);
-        }
-        dd($news);
-
-        $this->document = new \DOMDocument();
-        libxml_use_internal_errors(true);
-        $this->document->loadHTML($html);
     }
 
     /**
@@ -123,72 +52,97 @@ class HtmlParser
                 // Source link
                 $sourceLink = $node->link()->getUri();
 
-                // Title
-                $titleNode = $node
-                    ->filter($this->newsResource->getTitleSelector())
-                    ->first();
-                $title = $titleNode->count()
-                    ? $titleNode->text()
-                    : '';
-
-
                 // Parsing newsItem
                 $html = $this->getHtml($sourceLink);
-
                 $crawler = new Crawler($html);
 
+                // Title
+                $title = $this->getText($crawler, $this->newsResource->getTitleSelector());
+
                 // Text
-                $newsItemText = $crawler
-                    ->filter($this->newsResource->getTextSelector())
-                    ->first();
-                $text = $newsItemText->count()
-                    ? $newsItemText->text()
-                    : '';
+                $text = $this->getText($crawler, $this->newsResource->getTextSelector());
 
                 // Rating
-                $rating = rand(1, 5);
+                $rating = rand(1, 10);
 
-                // Save news item
-//                $newsItem->save();
+                // Image
+                $imageSrc = $this->getImageSrc($crawler, $this->newsResource->getImageSelector(), $sourceLink);
 
-//                $newsItemImage = $crawler
-//                    ->filter('.article__image');
+                // Updating or Creating NewsItem
+                $uniqueFields = [
+                    'source' => $this->newsResource->getUrl(),
+                    'title' => $title,
+                ];
 
-//                dd($newsItemImage);
+                $newsItem = [
+                    'title' => $title,
+                    'text' => $text,
+                    'image' => $imageSrc,
+                    'rating' => $rating,
+                    'source' => $this->newsResource->getUrl(),
+                    'source_link' => $sourceLink
+                ];
+
+                NewsItem::query()
+                    ->updateOrCreate($uniqueFields, $newsItem);
             });
 
         return count($news);
     }
 
-    public function getElementByClass(string $className)
+    /**
+     * Возвращает текстовое содержимое из crawler'а по первому совпадению селектору (массиву селекторов)
+     */
+    private function getText(Crawler $crawler, string|array $selectors): string|null
     {
-        $this->founded = [];
-        $element = $this->test($this->document, $className);
-        return $this->founded;
-    }
-
-    public function test(\DOMNode $element, string $className)
-    {
-        if ($element->hasChildNodes()) {
-            foreach ($element->childNodes as $childNode) {
-                $this->test($childNode, $className);
+        $text = null;
+        foreach (Arr::wrap($selectors) as $selector) {
+            $node = $this->getFirstFoundedNode($crawler, $selector);
+            if ($node->count()) {
+                return $node->text();
             }
         }
+        return $text;
+    }
 
-
-        if ($element instanceof \DOMElement) {
-            if ($element->hasAttribute('class')) {
-                $class = $element->getAttribute('class');
-                if ($class === $className) {
-                    $this->founded[] = $element;
+    /**
+     * Возвращает текстовое содержимое из crawler'а по первому совпадению селектору (массиву селекторов)
+     * и исходной ссылки новости
+     */
+    private function getImageSrc(Crawler $crawler, string|array $selectors, string $sourceLink): string|null
+    {
+        $imgSrc = null;
+        foreach (Arr::wrap($selectors) as $selector) {
+            $node = $this->getFirstFoundedNode($crawler, $selector);
+            if ($node->count()) {
+                $src = $node->extract(['src'])[0];
+                if (!isset(parse_url($src)['host'])) {
+                    $parsedUrl = parse_url($sourceLink);
+                    $imgSrc = $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . '/' . $src;
+                } else {
+                    $imgSrc =  $src;
                 }
+                break;
             }
         }
-
-
+        return $imgSrc;
     }
 
-    private function getHtml(string $url)
+    /**
+     * Возвращает первую совпавшую ноду по селектору
+     */
+    private function getFirstFoundedNode(Crawler $crawler, string $selector): Crawler
+    {
+        return $crawler
+            ->filter($selector)
+            ->first();
+    }
+
+    /**
+     * Возвращает html-содержимое страницы
+     * @param string $url URL сайта
+     */
+    private function getHtml(string $url): mixed
     {
         return Cache::get($url, function () use ($url) {
             return Http::get($url)->body();

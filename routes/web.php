@@ -15,17 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-
-    $url = 'https://www.rbc.ru/';
-    $test = new \App\Services\HtmlParser\HtmlParser(new \App\Services\NewsResources\Rbc());
-
-
-
-    dd('end');
-
-
-
-    return view('welcome');
+    return view('pages.index');
 });
 
 Route::get('news_items/fetch', [NewsItemController::class, 'fetch'])->name('news_items.fetch');

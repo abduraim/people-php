@@ -13,7 +13,8 @@ class NewsItemController extends Controller
 {
     public function index()
     {
-        return response()->json(NewsItemResource::collection(NewsItem::query()->paginate()));
+        return view('pages.news_items.index', ['news' => NewsItem::query()->paginate()]);
+//        return response()->json(NewsItemResource::collection(NewsItem::query()->paginate()));
     }
 
     public function show(NewsItem $newsItem)
@@ -27,5 +28,6 @@ class NewsItemController extends Controller
     public function fetch(HtmlParser $htmlParser)
     {
         FetchNewsJob::dispatch(15);
+        dd('Загрузка завершена');
     }
 }

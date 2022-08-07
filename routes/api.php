@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
 
 
-Route::apiResource('news_items', NewsItemController::class)->only(['index', 'update']);;
+Route::get('news_items/fetch', [NewsItemController::class, 'fetch'])->name('news_items.fetch');
+Route::apiResource('news_items', NewsItemController::class)->only(['index', 'show', 'update']);;

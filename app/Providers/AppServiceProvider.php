@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\HtmlParser\HtmlParser;
 use App\Services\NewsResources\Rbc;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,5 +29,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         //
+        Paginator::useBootstrap();
     }
 }
