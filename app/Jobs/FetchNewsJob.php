@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class FetchNewsJob implements ShouldQueue
 {
@@ -31,8 +32,16 @@ class FetchNewsJob implements ShouldQueue
      *
      * @return void
      */
-    public function handle(HtmlParser $htmlParser)
+    public function handle(HtmlParser $htmlParser): void
     {
-        $htmlParser->fetch($this->newsCount);
+        $htmlParser->turnOffCache();
+
+        $news = $htmlParser->fetchNews($this->newsCount);
+        $result = $htmlParser->updateOrCreateNews($news);
+
+        $commonCount = count($news);
+        $failedCount = $result['failed']->count();
+
+        Log::info("Новости загружены. Общее количество: {$commonCount}. Не загружено: {$failedCount}");
     }
 }

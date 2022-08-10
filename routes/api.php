@@ -15,7 +15,5 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
-
 Route::get('news_items/fetch', [NewsItemController::class, 'fetch'])->name('news_items.fetch');
 Route::apiResource('news_items', NewsItemController::class)->only(['index', 'show', 'update']);;

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Laravel</title>
+    <title>Тестовое задание PHP 4people</title>
 
     <!-- Fonts -->
     <link href="https://fonts.bunny.net/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
 <body>
 
 <div class="wrapper">
-    <h1 class="app__title">Тестовое задание PHP</h1>
+    <h1 class="app__title">Тестовое задание PHP 4people</h1>
 </div>
 
 <div class="wrapper">
