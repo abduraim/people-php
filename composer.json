@@ -1,9 +1,16 @@
 {
-    "name": "laravel/laravel",
+    "name": "abduraim/4people-php",
+    "version": "0.0.1",
     "type": "project",
-    "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "description": "Test PHP.",
+    "keywords": ["framework", "laravel", "php", "crawler", "test"],
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Timur Abduraimov",
+            "email": "abduraim.t@gmail.com"
+        }
+    ],
     "require": {
         "php": "^8.0.2",
         "guzzlehttp/guzzle": "^7.2",
